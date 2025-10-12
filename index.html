@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factory.ai API 余额监控看板 v2.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 { font-size: 28px; }
+        .header-info { font-size: 14px; opacity: 0.95; }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        /* 统计卡片 */
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+        .stat-card .label {
+            font-size: 13px;
+            color: #6c757d;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        /* 工具栏 */
+        .toolbar {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        /* 图表区域 */
+        .chart-section {
+            padding: 30px;
+            background: white;
+        }
+        .chart-container {
+            max-width: 100%;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        /* 表格 */
+        .table-container {
+            padding: 0 30px 30px 30px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
+        }
+        th:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        th.sortable::after {
+            content: ' ⇅';
+            opacity: 0.5;
+        }
+        th.sort-asc::after {
+            content: ' ↑';
+            opacity: 1;
+        }
+        th.sort-desc::after {
+            content: ' ↓';
+            opacity: 1;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 14px;
+        }
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        .key-cell {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #495057;
+        }
+        .actions-cell {
+            display: flex;
+            gap: 5px;
+        }
+        .icon-btn {
+            padding: 5px 10px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+        .icon-btn:hover {
+            transform: scale(1.2);
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h2 {
+            margin: 0;
+            color: #333;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .close-btn:hover {
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* 加载动画 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s linear infinite;
+        }
+
+        /* 徽章 */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .toolbar {
+                flex-direction: column;
+            }
+            .search-box {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <div>
+                <h1>🚀 Factory.ai API 余额监控看板 v2.0</h1>
+                <div class="header-info" id="updateTime">正在加载...</div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openAddKeyModal()">➕ 添加 Key</button>
+                <button class="btn btn-primary" onclick="batchTestKeys()">🔍 批量测试</button>
+                <button class="btn btn-primary" onclick="toggleAutoRefresh()">⏱️ <span id="autoRefreshBtn">启用自动刷新</span></button>
+                <button class="btn btn-primary" onclick="refreshData()">🔄 刷新</button>
+            </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="stats-cards" id="statsCards">
+            <div class="loading"><div class="spinner"></div> 加载中...</div>
+        </div>
+
+        <!-- 趋势图表 -->
+        <div class="chart-section">
+            <h3>📈 使用趋势</h3>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索 Key ID、别名或分组..." oninput="filterTable()">
+            </div>
+            <div class="filter-group">
+                <select id="groupFilter" class="filter-select" onchange="filterTable()">
+                    <option value="">所有分组</option>
+                </select>
+                <select id="statusFilter" class="filter-select" onchange="filterTable()">
+                    <option value="">所有状态</option>
+                    <option value="valid">有效</option>
+                    <option value="error">错误</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="table-container">
+            <div id="tableContent">
+                <div class="loading"><div class="spinner"></div> 正在加载数据...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑 Key 模态框 -->
+    <div id="keyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">添加 API Key</h2>
+                <button class="close-btn" onclick="closeKeyModal()">&times;</button>
+            </div>
+            <form id="keyForm" onsubmit="saveKey(event)">
+                <div class="form-group">
+                    <label for="keyId">Key ID *</label>
+                    <input type="text" id="keyId" required placeholder="例如: prod-key-1">
+                </div>
+                <div class="form-group">
+                    <label for="keyValue">API Key *</label>
+                    <input type="text" id="keyValue" required placeholder="fk-...">
+                </div>
+                <div class="form-group">
+                    <label for="keyAlias">别名</label>
+                    <input type="text" id="keyAlias" placeholder="例如: 生产环境主 Key">
+                </div>
+                <div class="form-group">
+                    <label for="keyGroup">分组</label>
+                    <select id="keyGroup">
+                        <option value="production">生产环境 (production)</option>
+                        <option value="development">开发环境 (development)</option>
+                        <option value="testing">测试环境 (testing)</option>
+                        <option value="default">默认 (default)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="keyNote">备注</label>
+                    <textarea id="keyNote" placeholder="可选的备注信息..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-warning" onclick="closeKeyModal()">取消</button>
+                    <button type="submit" class="btn btn-success">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentData = null;
+        let autoRefreshInterval = null;
+        let trendChart = null;
+        let editingKeyId = null;
+        let sortColumn = null;
+        let sortDirection = 'asc';
+
+        // 格式化数字
+        function formatNumber(num) {
+            if (num === undefined || num === null) return '0';
+            return new Intl.NumberFormat('en-US').format(num);
+        }
+
+        // 格式化百分比
+        function formatPercentage(ratio) {
+            if (ratio === undefined || ratio === null) return '0.00%';
+            return (ratio * 100).toFixed(2) + '%';
+        }
+
+        // 加载数据
+        async function loadData() {
+            try {
+                const response = await fetch('/api/data?t=' + new Date().getTime());
+                if (!response.ok) throw new Error('Failed to load data');
+                const data = await response.json();
+                currentData = data;
+                displayData(data);
+                updateChart();
+                updateGroupFilter(data);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('tableContent').innerHTML =
+                    `<div class="loading" style="color: #dc3545;">❌ 加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 显示数据
+        function displayData(data) {
+            // 更新统计卡片
+            const totalAllowance = data.totals.total_totalAllowance;
+            const totalUsed = data.totals.total_orgTotalTokensUsed;
+            const totalRemaining = data.totals.total_remaining;
+            const overallRatio = totalAllowance > 0 ? totalUsed / totalAllowance : 0;
+
+            document.getElementById('updateTime').textContent =
+                `最后更新: ${data.update_time} | 共 ${data.total_count} 个 API Key`;
+
+            document.getElementById('statsCards').innerHTML = `
+                <div class="stat-card">
+                    <div class="label">总计额度</div>
+                    <div class="value">${formatNumber(totalAllowance)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">已使用</div>
+                    <div class="value">${formatNumber(totalUsed)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">剩余额度</div>
+                    <div class="value">${formatNumber(totalRemaining)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">使用率</div>
+                    <div class="value">${formatPercentage(overallRatio)}</div>
+                </div>
+            `;
+
+            // 生成表格
+            renderTable(data.data);
+        }
+
+        // 渲染表格
+        function renderTable(keys) {
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="sortable" onclick="sortTable('id')">ID</th>
+                            <th class="sortable" onclick="sortTable('alias')">别名</th>
+                            <th class="sortable" onclick="sortTable('group')">分组</th>
+                            <th>API Key</th>
+                            <th>状态</th>
+                            <th class="sortable" onclick="sortTable('totalAllowance')">总额度</th>
+                            <th class="sortable" onclick="sortTable('orgTotalTokensUsed')">已使用</th>
+                            <th class="sortable" onclick="sortTable('remaining')">剩余</th>
+                            <th class="sortable" onclick="sortTable('usedRatio')">使用率</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            keys.forEach(item => {
+                if (item.error) {
+                    tableHTML += `
+                        <tr data-id="${item.id}" data-group="${item.group || 'default'}" data-status="error">
+                            <td>${item.id}</td>
+                            <td>${item.alias || '-'}</td>
+                            <td><span class="badge badge-info">${item.group || 'default'}</span></td>
+                            <td class="key-cell">${item.maskedKey || item.key.substring(0, 12) + '...'}</td>
+                            <td><span class="badge badge-danger">错误</span></td>
+                            <td colspan="4" style="color: #dc3545;">${item.error}</td>
+                            <td class="actions-cell">
+                                <button class="icon-btn" onclick="editKey('${item.id}')" title="编辑">✏️</button>
+                                <button class="icon-btn" onclick="deleteKey('${item.id}')" title="删除">🗑️</button>
+                            </td>
+                        </tr>`;
+                } else {
+                    const usagePercent = (item.usedRatio * 100).toFixed(1);
+                    const statusBadge = item.valid ?
+                        '<span class="badge badge-success">有效</span>' :
+                        '<span class="badge badge-danger">无效</span>';
+
+                    tableHTML += `
+                        <tr data-id="${item.id}" data-group="${item.group || 'default'}" data-status="valid">
+                            <td>${item.id}</td>
+                            <td title="${item.note || ''}">${item.alias || '-'}</td>
+                            <td><span class="badge badge-info">${item.group || 'default'}</span></td>
+                            <td class="key-cell">${item.maskedKey}</td>
+                            <td>${statusBadge}</td>
+                            <td>${formatNumber(item.totalAllowance)}</td>
+                            <td>${formatNumber(item.orgTotalTokensUsed)}</td>
+                            <td>${formatNumber(item.remaining)}</td>
+                            <td>
+                                ${formatPercentage(item.usedRatio)}
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${usagePercent}%"></div>
+                                </div>
+                            </td>
+                            <td class="actions-cell">
+                                <button class="icon-btn" onclick="editKey('${item.id}')" title="编辑">✏️</button>
+                                <button class="icon-btn" onclick="deleteKey('${item.id}')" title="删除">🗑️</button>
+                            </td>
+                        </tr>`;
+                }
+            });
+
+            tableHTML += `</tbody></table>`;
+            document.getElementById('tableContent').innerHTML = tableHTML;
+        }
+
+        // 更新图表
+        async function updateChart() {
+            try {
+                const response = await fetch('/api/history');
+                const history = await response.json();
+
+                if (history.length === 0) return;
+
+                const last30 = history.slice(-30);
+                const labels = last30.map(h => new Date(h.timestamp).toLocaleDateString('zh-CN'));
+                const usedData = last30.map(h => h.totals.total_orgTotalTokensUsed);
+                const allowanceData = last30.map(h => h.totals.total_totalAllowance);
+
+                const ctx = document.getElementById('trendChart');
+                if (trendChart) trendChart.destroy();
+
+                trendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: '已使用',
+                                data: usedData,
+                                borderColor: '#764ba2',
+                                backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                                tension: 0.4
+                            },
+                            {
+                                label: '总额度',
+                                data: allowanceData,
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to load chart:', error);
+            }
+        }
+
+        // 更新分组过滤器
+        function updateGroupFilter(data) {
+            const groups = new Set();
+            data.data.forEach(item => groups.add(item.group || 'default'));
+
+            const groupFilter = document.getElementById('groupFilter');
+            const currentValue = groupFilter.value;
+            groupFilter.innerHTML = '<option value="">所有分组</option>';
+            groups.forEach(group => {
+                groupFilter.innerHTML += `<option value="${group}">${group}</option>`;
+            });
+            groupFilter.value = currentValue;
+        }
+
+        // 过滤表格
+        function filterTable() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const groupFilter = document.getElementById('groupFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const id = row.dataset.id || '';
+                const group = row.dataset.group || '';
+                const status = row.dataset.status || '';
+                const text = row.textContent.toLowerCase();
+
+                const matchSearch = !searchText || text.includes(searchText);
+                const matchGroup = !groupFilter || group === groupFilter;
+                const matchStatus = !statusFilter || status === statusFilter;
+
+                row.style.display = (matchSearch && matchGroup && matchStatus) ? '' : 'none';
+            });
+        }
+
+        // 排序表格
+        function sortTable(column) {
+            if (!currentData) return;
+
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+
+            const sorted = [...currentData.data].sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+
+                if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+
+                if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+                if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            renderTable(sorted);
+
+            // 更新排序图标
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            const header = Array.from(document.querySelectorAll('th')).find(th =>
+                th.textContent.toLowerCase().includes(column.toLowerCase())
+            );
+            if (header) {
+                header.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+        }
+
+        // 刷新数据
+        function refreshData() {
+            loadData();
+        }
+
+        // 自动刷新
+        function toggleAutoRefresh() {
+            const btn = document.getElementById('autoRefreshBtn');
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                btn.textContent = '启用自动刷新';
+            } else {
+                autoRefreshInterval = setInterval(loadData, 300000); // 5分钟
+                btn.textContent = '停止自动刷新';
+                alert('自动刷新已启用,每5分钟刷新一次');
+            }
+        }
+
+        // 批量测试 Keys
+        async function batchTestKeys() {
+            if (!confirm('确定要测试所有 Key 的有效性吗?这可能需要一些时间。')) return;
+            alert('批量测试功能将重新查询所有 Keys,请稍候...');
+            await loadData();
+            alert('测试完成!请查看表格中的状态列。');
+        }
+
+        // 打开添加 Key 模态框
+        function openAddKeyModal() {
+            editingKeyId = null;
+            document.getElementById('modalTitle').textContent = '添加 API Key';
+            document.getElementById('keyForm').reset();
+            document.getElementById('keyId').disabled = false;
+            document.getElementById('keyModal').classList.add('active');
+        }
+
+        // 编辑 Key
+        async function editKey(keyId) {
+            editingKeyId = keyId;
+            document.getElementById('modalTitle').textContent = '编辑 API Key';
+            document.getElementById('keyId').disabled = true;
+
+            const key = currentData.data.find(k => k.id === keyId);
+            if (key) {
+                document.getElementById('keyId').value = key.id;
+                document.getElementById('keyValue').value = key.key;
+                document.getElementById('keyAlias').value = key.alias || '';
+                document.getElementById('keyGroup').value = key.group || 'default';
+                document.getElementById('keyNote').value = key.note || '';
+                document.getElementById('keyModal').classList.add('active');
+            }
+        }
+
+        // 删除 Key
+        async function deleteKey(keyId) {
+            if (!confirm(`确定要删除 Key "${keyId}" 吗?此操作不可恢复!`)) return;
+
+            try {
+                const response = await fetch(`/api/keys/${encodeURIComponent(keyId)}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ Key 删除成功!');
+                    loadData();
+                } else {
+                    alert('❌ 删除失败: ' + result.message);
+                }
+            } catch (error) {
+                alert('❌ 删除失败: ' + error.message);
+            }
+        }
+
+        // 保存 Key
+        async function saveKey(event) {
+            event.preventDefault();
+
+            const keyData = {
+                id: document.getElementById('keyId').value,
+                key: document.getElementById('keyValue').value,
+                alias: document.getElementById('keyAlias').value,
+                group: document.getElementById('keyGroup').value,
+                note: document.getElementById('keyNote').value
+            };
+
+            try {
+                let response;
+                if (editingKeyId) {
+                    // 更新
+                    response = await fetch(`/api/keys/${encodeURIComponent(editingKeyId)}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(keyData)
+                    });
+                } else {
+                    // 添加
+                    response = await fetch('/api/keys', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(keyData)
+                    });
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(editingKeyId ? '✅ Key 更新成功!' : '✅ Key 添加成功!');
+                    closeKeyModal();
+                    loadData();
+                } else {
+                    alert('❌ 操作失败: ' + result.message);
+                }
+            } catch (error) {
+                alert('❌ 操作失败: ' + error.message);
+            }
+        }
+
+        // 关闭模态框
+        function closeKeyModal() {
+            document.getElementById('keyModal').classList.remove('active');
+            document.getElementById('keyForm').reset();
+            editingKeyId = null;
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+        });
+
+        // 点击模态框外部关闭
+        document.getElementById('keyModal').addEventListener('click', (e) => {
+            if (e.target.id === 'keyModal') {
+                closeKeyModal();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "name": "factory-balance-monitor",
+  "version": "2.0.0",
+  "description": "Factory.ai API Keys 使用情况监控系统 - 无需安装依赖,开箱即用",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "factory.ai",
+    "api",
+    "balance",
+    "monitor",
+    "dashboard"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "本地项目"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "readme": "只需要 Node.js 即可运行,无需 npm install!双击 启动.bat 即可使用。详见 README.md"
+}

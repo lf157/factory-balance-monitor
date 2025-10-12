@@ -1,0 +1,25 @@
+{
+  "apiKeys": [
+    {
+      "id": "key-1",
+      "key": "fk-your-api-key-here-replace-with-real-key",
+      "alias": "账户名称或邮箱",
+      "group": "production",
+      "note": "生产环境主 Key",
+      "enabled": true
+    },
+    {
+      "id": "key-2",
+      "key": "fk-another-api-key-here",
+      "alias": "开发环境账户",
+      "group": "development",
+      "note": "开发测试使用",
+      "enabled": true
+    }
+  ],
+  "settings": {
+    "autoRefreshInterval": 300000,
+    "alertThreshold": 0.8,
+    "historyRetentionDays": 30
+  }
+}

@@ -1,0 +1,31 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# 敏感配置文件 - 包含真实 API Keys (不要提交到 Git!)
+config.json.backup
+*.backup
+*副本*
+config - *.json
+config-*.json
+
+# 历史数据目录 (包含使用记录)
+data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
