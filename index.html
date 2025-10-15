@@ -516,8 +516,8 @@
                 </div>
                 <div class="form-group">
                     <label for="keyPassword" id="keyPasswordLabel">查看密码（4-6位数字）</label>
-                    <input type="password" id="keyPassword" pattern="[0-9]{4,6}" placeholder="默认0000" maxlength="6">
-                    <small id="passwordHint">用于保护 Key 的完整查看</small>
+                    <input type="password" id="keyPassword" pattern="[0-9]{4,6}" placeholder="不设置默认为 0000" maxlength="6">
+                    <small id="passwordHint">⚠️ 不设置密码将使用默认密码 0000，建议设置独立密码</small>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-warning" onclick="closeKeyModal()">取消</button>
@@ -551,9 +551,9 @@ fk-zzzzzzzzzzzzzzzzzzzzzz" required></textarea>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="importPassword">查看密码（4-6位数字，默认0000）</label>
-                    <input type="password" id="importPassword" pattern="[0-9]{4,6}" placeholder="0000" maxlength="6">
-                    <small>设置密码后需要输入密码才能查看完整的 API Key</small>
+                    <label for="importPassword">查看密码（4-6位数字）</label>
+                    <input type="password" id="importPassword" pattern="[0-9]{4,6}" placeholder="不设置默认为 0000" maxlength="6">
+                    <small style="color: #ff6b6b;">⚠️ 重要：不设置密码将使用默认密码 0000，建议设置独立密码保护您的 API Keys</small>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-warning" onclick="closeBatchImportModal()">取消</button>
@@ -954,13 +954,35 @@ fk-zzzzzzzzzzzzzzzzzzzzzz" required></textarea>
             document.getElementById('keyValueHint').style.display = 'none';
             document.getElementById('currentPasswordGroup').style.display = 'none';
             document.getElementById('keyPasswordLabel').textContent = '查看密码（4-6位数字）';
-            document.getElementById('passwordHint').textContent = '用于保护 Key 的完整查看';
+            document.getElementById('passwordHint').textContent = '⚠️ 不设置密码将使用默认密码 0000，建议设置独立密码';
             document.getElementById('keyPassword').removeAttribute('data-original');
             document.getElementById('keyModal').classList.add('active');
         }
 
         // 编辑 Key
         async function editKey(keyId) {
+            // 先验证密码
+            const password = prompt('请输入查看密码或管理员密码以编辑：');
+            if (!password) {
+                alert('❌ 已取消编辑操作');
+                return;
+            }
+            
+            // 验证密码
+            const verifyResponse = await fetch('/api/keys/verify-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keyId, password })
+            });
+            
+            if (!verifyResponse.ok) {
+                alert('❌ 密码错误，无法编辑！');
+                return;
+            }
+            
+            // 密码验证通过，记录已验证状态
+            window.currentEditVerified = true;
+            
             editingKeyId = keyId;
             document.getElementById('modalTitle').textContent = '编辑 API Key';
             document.getElementById('keyId').disabled = true;
@@ -978,15 +1000,14 @@ fk-zzzzzzzzzzzzzzzzzzzzzz" required></textarea>
                 document.getElementById('keyGroup').value = key.group || 'default';
                 document.getElementById('keyNote').value = key.note || '';
                 
-                // 存储原始密码，显示当前密码验证框
+                // 已经验证过密码，可以直接修改
                 const originalPassword = key.viewPassword || '0000';
                 document.getElementById('keyPassword').setAttribute('data-original', originalPassword);
                 document.getElementById('keyPassword').value = '';  // 清空密码框，让用户输入新密码
-                document.getElementById('keyPassword').placeholder = '留空保持不变';
-                document.getElementById('currentPasswordGroup').style.display = 'block';
-                document.getElementById('currentPassword').value = '';
+                document.getElementById('keyPassword').placeholder = '留空保持不变，当前: ****';
+                document.getElementById('currentPasswordGroup').style.display = 'none'; // 不需要显示当前密码输入框
                 document.getElementById('keyPasswordLabel').textContent = '新查看密码（留空保持不变）';
-                document.getElementById('passwordHint').textContent = '输入新密码，留空则不修改';
+                document.getElementById('passwordHint').textContent = '可直接修改密码，留空则不修改';
                 
                 document.getElementById('keyModal').classList.add('active');
             }
@@ -995,6 +1016,25 @@ fk-zzzzzzzzzzzzzzzzzzzzzz" required></textarea>
         // 删除 Key
         async function deleteKey(keyId) {
             if (!confirm(`确定要删除 Key "${keyId}" 吗?此操作不可恢复!`)) return;
+            
+            // 弹出密码验证框
+            const password = prompt('请输入查看密码或管理员密码以确认删除：');
+            if (!password) {
+                alert('❌ 已取消删除操作');
+                return;
+            }
+            
+            // 验证密码
+            const verifyResponse = await fetch('/api/keys/verify-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keyId, password })
+            });
+            
+            if (!verifyResponse.ok) {
+                alert('❌ 密码错误，无法删除！');
+                return;
+            }
 
             try {
                 const response = await fetch(`/api/keys/${encodeURIComponent(keyId)}`, {
@@ -1017,32 +1057,11 @@ fk-zzzzzzzzzzzzzzzzzzzzzz" required></textarea>
         async function saveKey(event) {
             event.preventDefault();
 
-            // 如果是编辑模式且要修改密码，需要验证当前密码
-            if (editingKeyId) {
-                const originalPassword = document.getElementById('keyPassword').getAttribute('data-original');
-                const newPassword = document.getElementById('keyPassword').value;
-                const currentPassword = document.getElementById('currentPassword').value;
-                
-                // 如果输入了新密码（不是留空）
-                if (newPassword) {
-                    // 检查是否输入了当前密码
-                    if (!currentPassword) {
-                        alert('❌ 请输入当前密码以验证身份！');
-                        document.getElementById('currentPassword').focus();
-                        return;
-                    }
-                    
-                    // 验证当前密码（需要先验证是否为管理员密码）
-                    if (currentPassword !== originalPassword) {
-                        // 尝试验证管理员密码
-                        const adminVerify = await verifyAdminPassword(currentPassword);
-                        if (!adminVerify) {
-                            alert('❌ 当前密码错误！');
-                            document.getElementById('currentPassword').focus();
-                            return;
-                        }
-                    }
-                }
+            // 如果是编辑模式且要修改密码，因为已经验证过了，不需要再验证
+            if (editingKeyId && !window.currentEditVerified) {
+                // 如果没有验证过（不应该发生），阻止操作
+                alert('❌ 未验证身份，无法保存！');
+                return;
             }
 
             const keyData = {
@@ -1104,6 +1123,7 @@ fk-zzzzzzzzzzzzzzzzzzzzzz" required></textarea>
             document.getElementById('keyModal').classList.remove('active');
             document.getElementById('keyForm').reset();
             editingKeyId = null;
+            window.currentEditVerified = false; // 清理验证状态
         }
         
         // 验证管理员密码

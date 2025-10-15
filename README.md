@@ -1,8 +1,8 @@
 # 🚀 Factory.ai API 余额监控系统 v2.0
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flf157%2Ffactory-balance-monitor-vercel&env=NODE_ENV&envDescription=Environment%20variables&envLink=https%3A%2F%2Fgithub.com%2Flf157%2Ffactory-balance-monitor-vercel&project-name=factory-balance-monitor&repository-name=factory-balance-monitor)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flf157%2Ffactory-balance-monitor&env=ADMIN_PASSWORD&envDescription=Set%20admin%20password%20for%20security&project-name=factory-balance-monitor&repository-name=factory-balance-monitor)
 
-一个功能完善的 Factory.ai API Keys 使用情况监控系统,支持可视化看板、历史趋势分析和完整的 Key 管理功能。
+一个功能完善的 Factory.ai API Keys 使用情况监控系统，支持可视化看板、历史趋势分析、密码保护和批量管理功能。
 ![96b2ea3b0331ac36e509da993e19f335](https://github.com/user-attachments/assets/52d41ce0-c1c4-4cab-88ff-f03a173cc344)
 
 
@@ -35,20 +35,31 @@
 ## 🔐 安全功能
 
 ### 密码保护系统
-- **查看密码**：每个 Key 都可以设置 4-6 位数字密码保护
-- **管理员密码**：通过环境变量设置，可以查看所有 Keys 和批量修改密码
-- **密码验证**：修改密码需要验证原密码或管理员密码
+- **查看密码**：每个 Key 都可以设置 4-6 位数字密码保护（默认 0000）
+- **编辑/删除验证**：编辑和删除操作需要输入密码验证
+- **管理员密码**：通过环境变量设置，可以绕过所有密码验证
+- **API Keys 加密**：使用 AES-256-GCM 加密存储所有 API Keys
 
 ### 设置管理员密码
-1. 复制 `.env.example` 为 `.env`
-2. 设置 `ADMIN_PASSWORD=你的管理员密码`
-3. 如果不设置，系统会自动生成随机密码
 
-**Vercel 部署设置**：
+**本地运行**：
+```bash
+# Windows
+set ADMIN_PASSWORD=your_password
+start.bat
+
+# Linux/Mac
+export ADMIN_PASSWORD=your_password
+node server.js
+```
+
+**Vercel 部署**：
 1. 在 Vercel Dashboard → Settings → Environment Variables
 2. 添加 `ADMIN_PASSWORD` 变量
 3. 设置一个强密码
 4. 重新部署生效
+
+⚠️ **注意**：如果不设置管理员密码，系统会在启动时生成一个随机6位数密码并显示在控制台。
 
 ## ✨ 核心功能
 
@@ -63,11 +74,12 @@
 - ✅ **分组统计** - 按环境分组(生产/开发/测试)统计
 
 ### 🔧 Key 管理
-- ✅ **添加 Key** - 通过界面直接添加新的 API Key
-- ✅ **编辑 Key** - 修改别名、分组、备注等信息
-- ✅ **删除 Key** - 删除不再使用的 Keys
-- ✅ **批量测试** - 一键测试所有 Keys 的有效性
-- ✅ **即时同步** - 所有操作立即保存到本地配置文件
+- ✅ **添加 Key** - 通过界面添加新的 API Key，可设置查看密码
+- ✅ **编辑 Key** - 修改别名、分组、备注（需密码验证）
+- ✅ **删除 Key** - 安全删除 Keys（需密码验证）
+- ✅ **批量导入** - 一次导入多个 API Keys
+- ✅ **批量编辑** - 同时修改多个 Keys 的属性
+- ✅ **批量删除** - 选择多个 Keys 批量删除
 
 ### 🎨 交互功能
 - ✅ **搜索功能** - 快速搜索 Key ID、别名或分组

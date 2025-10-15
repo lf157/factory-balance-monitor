@@ -521,6 +521,32 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // API: 验证密码（用于编辑和删除前的验证）
+  if (url.pathname === "/api/keys/verify-password" && req.method === 'POST') {
+    parseRequestBody(req, async (err, data) => {
+      if (err) {
+        return sendErrorResponse(res, 400, '请求格式错误');
+      }
+      
+      const { keyId, password } = data;
+      const config = await loadConfig();
+      const key = config.apiKeys.find(k => k.id === keyId);
+      
+      if (!key) {
+        return sendErrorResponse(res, 404, 'Key 不存在');
+      }
+      
+      // 验证密码
+      const keyPassword = key.viewPassword || '0000';
+      if (password === ADMIN_PASSWORD || password === keyPassword) {
+        sendSuccessResponse(res, {});
+      } else {
+        sendErrorResponse(res, 403, '密码错误');
+      }
+    });
+    return;
+  }
+
   // API: 查看完整 Key
   if (url.pathname === "/api/keys/view" && req.method === 'POST') {
     parseRequestBody(req, async (err, data) => {
