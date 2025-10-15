@@ -1219,14 +1219,22 @@ fk-zzzzzzzzzzzzzzzzzzzzzz" required></textarea>
             
             if (selectAll.checked) {
                 checkboxes.forEach(cb => {
-                    cb.checked = true;
-                    selectedKeys.add(cb.value);
+                    // 只选择可见行中的复选框
+                    const row = cb.closest('tr');
+                    if (row && row.style.display !== 'none') {
+                        cb.checked = true;
+                        selectedKeys.add(cb.value);
+                    }
                 });
             } else {
                 checkboxes.forEach(cb => {
-                    cb.checked = false;
+                    // 只取消可见行中的复选框
+                    const row = cb.closest('tr');
+                    if (row && row.style.display !== 'none') {
+                        cb.checked = false;
+                        selectedKeys.delete(cb.value);
+                    }
                 });
-                selectedKeys.clear();
             }
             updateSelectedCount();
         }
@@ -1306,7 +1314,28 @@ fk-zzzzzzzzzzzzzzzzzzzzzz" required></textarea>
                 return;
             }
             
+            // 弹出密码验证框
+            const password = prompt(`请输入查看密码或管理员密码以确认删除 ${selectedKeys.size} 个 Keys：`);
+            if (!password) {
+                alert('❌ 已取消删除操作');
+                return;
+            }
+            
+            // 验证密码 - 使用第一个选中的Key进行验证（因为批量操作使用相同权限）
+            const firstKeyId = Array.from(selectedKeys)[0];
             try {
+                const verifyResponse = await fetch('/api/keys/verify-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keyId: firstKeyId, password })
+                });
+                
+                if (!verifyResponse.ok) {
+                    alert('❌ 密码错误，无法批量删除！');
+                    return;
+                }
+                
+                // 验证通过，执行批量删除
                 const response = await fetch('/api/keys/batch-delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
