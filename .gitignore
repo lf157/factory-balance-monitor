@@ -1,25 +1,29 @@
+# 配置文件（包含敏感信息）- 永远不要提交真实的 API Keys！
+config.json
+!config.example.json
+
+# 批处理文件
+*.bat
+
+# 数据目录
+data/
+*.log
+
 # Node.js
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Environment variables
+# 环境变量
 .env
 .env.local
-.env.production
+.env.*.local
 
-# 敏感配置文件 - 包含真实 API Keys (不要提交到 Git!)
-config.json.backup
-*.backup
-*副本*
-config - *.json
-config-*.json
+# Vercel
+.vercel
 
-# 历史数据目录 (包含使用记录)
-data/
-
-# OS
+# 操作系统文件
 .DS_Store
 Thumbs.db
 
@@ -29,3 +33,11 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# 测试覆盖率
+coverage/
+.nyc_output/
+
+# 临时文件
+*.tmp
+temp/

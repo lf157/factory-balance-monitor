@@ -22,7 +22,12 @@
     "type": "git",
     "url": "本地项目"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@vercel/blob": "^0.19.0"
+  },
   "devDependencies": {},
+  "optionalDependencies": {
+    "@vercel/blob": "^0.19.0"
+  },
   "readme": "只需要 Node.js 即可运行,无需 npm install!双击 启动.bat 即可使用。详见 README.md"
 }

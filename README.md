@@ -1,6 +1,52 @@
 # 🚀 Factory.ai API 余额监控系统 v2.0
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flf157%2Ffactory-balance-monitor-vercel&env=NODE_ENV&envDescription=Environment%20variables&envLink=https%3A%2F%2Fgithub.com%2Flf157%2Ffactory-balance-monitor-vercel&project-name=factory-balance-monitor&repository-name=factory-balance-monitor)
+
 一个功能完善的 Factory.ai API Keys 使用情况监控系统,支持可视化看板、历史趋势分析和完整的 Key 管理功能。
+
+## 🚀 一键部署到 Vercel
+
+点击上方的 "Deploy with Vercel" 按钮即可快速部署到 Vercel 平台。
+
+### 🌟 Vercel 部署优势
+- ✅ **数据持久化**：使用 Vercel Blob 存储，添加/删除 Key 永久保存
+- ✅ **历史记录保留**：趋势图表数据不会丢失
+- ✅ **全球访问**：通过 CDN 加速，任何地方都能快速访问
+- ✅ **免费使用**：1GB 存储 + 每月 10,000 次请求，足够个人使用
+
+### 📖 部署步骤
+1. 点击 "Deploy with Vercel" 按钮
+2. 使用 GitHub 账号授权
+3. 部署完成后，**必须配置 Vercel Blob 存储**（见下方）
+4. 访问分配的 URL 即可使用
+
+### ⚡ 重要：配置 Vercel Blob 存储
+部署后必须添加 Blob 存储才能保存数据：
+1. 在 Vercel Dashboard 进入项目
+2. 点击 **Storage** → **Browse Storage** → **Blob**
+3. 创建新的 Blob 存储（如：factory-balance-blob）
+4. 点击 **Connect Project** 连接到你的项目
+5. **重新部署**项目使配置生效
+
+详细说明请查看 [📚 Vercel 部署完整指南](./VERCEL_DEPLOY_GUIDE.md)
+
+## 🔐 安全功能
+
+### 密码保护系统
+- **查看密码**：每个 Key 都可以设置 4-6 位数字密码保护
+- **管理员密码**：通过环境变量设置，可以查看所有 Keys 和批量修改密码
+- **密码验证**：修改密码需要验证原密码或管理员密码
+
+### 设置管理员密码
+1. 复制 `.env.example` 为 `.env`
+2. 设置 `ADMIN_PASSWORD=你的管理员密码`
+3. 如果不设置，系统会自动生成随机密码
+
+**Vercel 部署设置**：
+1. 在 Vercel Dashboard → Settings → Environment Variables
+2. 添加 `ADMIN_PASSWORD` 变量
+3. 设置一个强密码
+4. 重新部署生效
 
 ## ✨ 核心功能
 
