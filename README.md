@@ -3,6 +3,8 @@
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flf157%2Ffactory-balance-monitor-vercel&env=NODE_ENV&envDescription=Environment%20variables&envLink=https%3A%2F%2Fgithub.com%2Flf157%2Ffactory-balance-monitor-vercel&project-name=factory-balance-monitor&repository-name=factory-balance-monitor)
 
 一个功能完善的 Factory.ai API Keys 使用情况监控系统,支持可视化看板、历史趋势分析和完整的 Key 管理功能。
+![96b2ea3b0331ac36e509da993e19f335](https://github.com/user-attachments/assets/52d41ce0-c1c4-4cab-88ff-f03a173cc344)
+
 
 ## 🚀 一键部署到 Vercel
 
