@@ -42,7 +42,7 @@
 
 ### 设置管理员密码
 
-**本地运行**：
+**本地运行**：(本地运行可不设置，不设置每次启动随机密码)
 ```bash
 # Windows
 set ADMIN_PASSWORD=your_password
